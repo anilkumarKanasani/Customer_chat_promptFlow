@@ -1,0 +1,58 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  question:
+    type: string
+    is_chat_input: true
+    default: Hello
+  chat_history:
+    type: list
+    is_chat_history: true
+    default: []
+outputs:
+  answer:
+    type: string
+    reference: ${chat_request.output}
+    is_chat_output: true
+nodes:
+- name: customer_details
+  type: python
+  source:
+    type: code
+    path: get_customer.py
+  inputs:
+    customerId: "4"
+- name: product_details
+  type: python
+  source:
+    type: code
+    path: get_product.py
+  inputs:
+    productId: "3"
+- name: embeddings
+  type: python
+  source:
+    type: code
+    path: get_embeddings.py
+  inputs:
+    question: ${inputs.question}
+- name: documents
+  type: python
+  source:
+    type: code
+    path: get_context.py
+  inputs:
+    question: ${inputs.question}
+    embedding: ${embeddings.output}
+- name: chat_request
+  type: python
+  source:
+    type: code
+    path: chat_request.py
+  inputs:
+    customer: ${customer_details.output}
+    context: ${documents.output}
+    question: ${inputs.question}
+    chat_history: ${inputs.chat_history}
+  api: chat
